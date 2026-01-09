@@ -5,105 +5,245 @@
 <title>Familienplaner Smart-TV</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <style>
-html,body{margin:0;padding:0;background:#000;overflow:hidden;font-family:Arial}
+html,body{
+  margin:0;
+  padding:0;
+  background:#000;
+  overflow:hidden;
+  font-family:Arial,Helvetica,sans-serif;
+}
 canvas{display:block}
 </style>
 </head>
 <body>
-<canvas id="tv"></canvas>
+
+<canvas id="dashboard"></canvas>
 
 <script>
-/* ===== BASIS ===== */
-const canvas=document.getElementById("tv");
-const ctx=canvas.getContext("2d");
-function resize(){canvas.width=innerWidth;canvas.height=innerHeight}
-addEventListener("resize",resize);resize();
+/* =====================================================
+   GRUNDSETUP
+===================================================== */
+const canvas = document.getElementById("dashboard");
+const ctx = canvas.getContext("2d");
 
-/* ===== PERSONEN & PLAN ===== */
-const personen=["Eltern","Nea","Leo","Neo"];
-const tage=["Mo","Di","Mi","Do","Fr","Sa","So"];
-let wochenplan={Mo:{},Di:{},Mi:{},Do:{},Fr:{},Sa:{},So:{}};
-tage.forEach(t=>personen.forEach(p=>wochenplan[t][p]=""));
+function resize(){
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+}
+window.addEventListener("resize", resize);
+resize();
 
-/* ===== FERIEN ===== */
+/* =====================================================
+   KONFIGURATION
+===================================================== */
+const HA_URL   = "http://homeassistant.local:8123";
+const HA_TOKEN = "DEIN_LONG_LIVED_TOKEN";
+const CALENDAR_JSON_URL = "http://DEIN_SERVER/calendar.json";
+
+/* =====================================================
+   PERSONEN & WOCHENPLAN
+===================================================== */
+const personen = ["Eltern","Nea","Leo","Neo"];
+const tage = ["Mo","Di","Mi","Do","Fr","Sa","So"];
+
+let wochenplan = {};
+tage.forEach(t=>{
+  wochenplan[t] = {};
+  personen.forEach(p=>wochenplan[t][p]="");
+});
+
+/* =====================================================
+   HINTERGRUND: TAGESZEIT + JAHRESZEIT
+===================================================== */
+function getSeason(){
+  const m=new Date().getMonth()+1;
+  if(m<=2||m===12)return"winter";
+  if(m<=5)return"spring";
+  if(m<=8)return"summer";
+  return"autumn";
+}
+function getDaytime(){
+  const h=new Date().getHours();
+  if(h<6)return"night";
+  if(h<11)return"morning";
+  if(h<18)return"day";
+  return"evening";
+}
+
+const bgImg = new Image();
+function updateBackground(){
+  bgImg.src=`backgrounds/${getSeason()}_${getDaytime()}.jpg`;
+}
+updateBackground();
+setInterval(updateBackground,5*60*1000);
+
+/* =====================================================
+   FERIEN NIEDERSACHSEN (AUTO + CACHE)
+===================================================== */
 let ferien=[];
 async function loadFerien(){
- try{
-  const r=await fetch("https://ferien-api.de/api/v1/holidays/NDS");
-  ferien=await r.json();
-  localStorage.setItem("ferien",JSON.stringify(ferien));
- }catch{
-  ferien=JSON.parse(localStorage.getItem("ferien")||"[]");
- }
+  try{
+    const r=await fetch("https://ferien-api.de/api/v1/holidays/NDS");
+    ferien=await r.json();
+    localStorage.setItem("ferien_nds",JSON.stringify(ferien));
+  }catch{
+    ferien=JSON.parse(localStorage.getItem("ferien_nds")||"[]");
+  }
 }
 loadFerien();
 
 function isFerien(d){
- return ferien.some(f=>new Date(d)>=new Date(f.start)&&new Date(d)<=new Date(f.end));
+  return ferien.some(f=>new Date(d)>=new Date(f.start)&&new Date(d)<=new Date(f.end));
 }
 
-/* ===== OFFLINE ===== */
+/* =====================================================
+   GOOGLE-KALENDER (JSON PROXY)
+===================================================== */
+async function loadCalendar(){
+  try{
+    const r=await fetch(CALENDAR_JSON_URL);
+    const events=await r.json();
+
+    tage.forEach(t=>personen.forEach(p=>wochenplan[t][p]=""));
+
+    events.forEach(e=>{
+      const tag=e.weekday.slice(0,2);
+      if(!wochenplan[tag])return;
+
+      const t=e.title.toLowerCase();
+      if(t.includes("nea"))wochenplan[tag].Nea=e.title;
+      else if(t.includes("leo"))wochenplan[tag].Leo=e.title;
+      else if(t.includes("neo"))wochenplan[tag].Neo=e.title;
+      else wochenplan[tag].Eltern+=(e.title+" ");
+    });
+
+    saveState();
+  }catch{}
+}
+loadCalendar();
+setInterval(loadCalendar,10*60*1000);
+
+/* =====================================================
+   OFFLINE-FALLBACK
+===================================================== */
 function saveState(){
- localStorage.setItem("state",JSON.stringify({wochenplan}));
+  localStorage.setItem("dashboard_state",JSON.stringify({wochenplan,news}));
 }
-setInterval(saveState,30000);
+function loadState(){
+  const s=localStorage.getItem("dashboard_state");
+  if(!s)return;
+  const d=JSON.parse(s);
+  wochenplan=d.wochenplan||wochenplan;
+  news=d.news||news;
+}
+loadState();
 
-(function loadState(){
- const s=localStorage.getItem("state");
- if(s) wochenplan=JSON.parse(s).wochenplan;
-})();
-
-addEventListener("offline",()=>{
- ticker=["Offline-Modus – letzte Daten"];
+window.addEventListener("offline",()=>{
+  news=["Offline-Modus – letzte Daten werden angezeigt"];
 });
 
-/* ===== NEWS ===== */
-let ticker=["Lade Nachrichten …"];
-let tx=canvas.width;
+/* =====================================================
+   NACHRICHTEN-TICKER
+===================================================== */
+let news=["Lade Nachrichten …"];
+let tickerX=canvas.width;
+
 async function loadNews(){
- try{
-  const r=await fetch("https://api.rss2json.com/v1/api.json?rss_url=https://www.tagesschau.de/xml/rss2");
-  const j=await r.json();
-  ticker=j.items.slice(0,5).map(n=>n.title);
- }catch{}
+  try{
+    const r=await fetch(
+      "https://api.rss2json.com/v1/api.json?rss_url=https://www.tagesschau.de/xml/rss2"
+    );
+    const j=await r.json();
+    news=j.items.slice(0,5).map(n=>n.title);
+    saveState();
+  }catch{}
 }
-loadNews();setInterval(loadNews,300000);
+loadNews();
+setInterval(loadNews,5*60*1000);
 
-/* ===== RENDER ===== */
+/* =====================================================
+   ALEXA → DIASHOW (HOME ASSISTANT)
+===================================================== */
+let slideshow=false;
+let photos=["photos/1.jpg","photos/2.jpg","photos/3.jpg"];
+let photoIndex=0;
+const slideImg=new Image();
+
+async function checkSlideshow(){
+  try{
+    const r=await fetch(`${HA_URL}/api/states/input_boolean.slideshow_modus`,{
+      headers:{Authorization:`Bearer ${HA_TOKEN}`}
+    });
+    const d=await r.json();
+    slideshow=d.state==="on";
+  }catch{}
+}
+setInterval(checkSlideshow,10000);
+
+/* Auto-Diashow alle 2 Minuten */
+setInterval(()=>{
+  slideshow=!slideshow;
+  photoIndex=(photoIndex+1)%photos.length;
+},120000);
+
+/* =====================================================
+   RENDERING
+===================================================== */
 function draw(){
- ctx.clearRect(0,0,canvas.width,canvas.height);
- ctx.fillStyle="#1e293b";
- ctx.fillRect(0,0,canvas.width,canvas.height);
+  const w=canvas.width,h=canvas.height;
+  ctx.clearRect(0,0,w,h);
 
- const colW=canvas.width*0.55/7;
- tage.forEach((t,i)=>{
-  const x=20+i*colW,y=100;
-  ctx.fillStyle="rgba(255,255,255,.8)";
-  ctx.fillRect(x,y,colW-6,canvas.height*.55);
-  ctx.fillStyle="#000";
-  ctx.fillText(t,x+10,y+30);
+  if(slideshow){
+    slideImg.src=photos[photoIndex];
+    ctx.drawImage(slideImg,0,0,w,h);
+    requestAnimationFrame(draw);
+    return;
+  }
 
-  personen.forEach((p,r)=>{
-   const dy=y+70+r*32;
-   if(isFerien(new Date())) {
-     ctx.fillStyle="rgba(255,215,0,.35)";
-     ctx.fillRect(x+6,dy-20,colW-18,26);
-   }
-   ctx.fillStyle="#000";
-   ctx.fillText(wochenplan[t][p],x+10,dy);
+  ctx.drawImage(bgImg,0,0,w,h);
+
+  /* HEADER */
+  ctx.fillStyle="rgba(0,0,0,0.65)";
+  ctx.fillRect(0,0,w,70);
+  ctx.fillStyle="#fff";
+  ctx.font="26px Arial";
+  ctx.fillText(new Date().toLocaleString("de-DE"),30,45);
+
+  /* WOCHENPLAN */
+  const colW=w*0.55/7;
+  const startY=100;
+
+  tage.forEach((t,i)=>{
+    const x=20+i*colW;
+    ctx.fillStyle="rgba(255,255,255,0.8)";
+    ctx.fillRect(x,startY,colW-6,h*0.55);
+    ctx.fillStyle="#000";
+    ctx.fillText(t,x+10,startY+30);
+
+    personen.forEach((p,r)=>{
+      const y=startY+70+r*32;
+      if(isFerien(new Date())){
+        ctx.fillStyle="rgba(255,215,0,0.35)";
+        ctx.fillRect(x+6,y-20,colW-18,26);
+      }
+      ctx.fillStyle="#000";
+      ctx.fillText(wochenplan[t][p],x+10,y);
+    });
   });
- });
 
- const text=ticker.join(" • ");
- ctx.fillStyle="rgba(0,0,0,.75)";
- ctx.fillRect(0,canvas.height-40,canvas.width,40);
- ctx.fillStyle="#fff";
- ctx.fillText(text,tx,canvas.height-12);
- tx-=1;if(tx<-ctx.measureText(text).width)tx=canvas.width;
+  /* NEWS-TICKER */
+  const text=news.join("  •  ");
+  ctx.fillStyle="rgba(0,0,0,0.75)";
+  ctx.fillRect(0,h-40,w,40);
+  ctx.fillStyle="#fff";
+  ctx.fillText(text,tickerX,h-12);
+  tickerX-=1;
+  if(tickerX<-ctx.measureText(text).width)tickerX=w;
 
- requestAnimationFrame(draw);
+  requestAnimationFrame(draw);
 }
 draw();
 </script>
+
 </body>
 </html>
