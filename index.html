@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<title>Familienplaner Smart-TV</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+html,body{margin:0;padding:0;background:#000;overflow:hidden;font-family:Arial}
+canvas{display:block}
+</style>
+</head>
+<body>
+<canvas id="tv"></canvas>
+
+<script>
+/* ===== BASIS ===== */
+const canvas=document.getElementById("tv");
+const ctx=canvas.getContext("2d");
+function resize(){canvas.width=innerWidth;canvas.height=innerHeight}
+addEventListener("resize",resize);resize();
+
+/* ===== PERSONEN & PLAN ===== */
+const personen=["Eltern","Nea","Leo","Neo"];
+const tage=["Mo","Di","Mi","Do","Fr","Sa","So"];
+let wochenplan={Mo:{},Di:{},Mi:{},Do:{},Fr:{},Sa:{},So:{}};
+tage.forEach(t=>personen.forEach(p=>wochenplan[t][p]=""));
+
+/* ===== FERIEN ===== */
+let ferien=[];
+async function loadFerien(){
+ try{
+  const r=await fetch("https://ferien-api.de/api/v1/holidays/NDS");
+  ferien=await r.json();
+  localStorage.setItem("ferien",JSON.stringify(ferien));
+ }catch{
+  ferien=JSON.parse(localStorage.getItem("ferien")||"[]");
+ }
+}
+loadFerien();
+
+function isFerien(d){
+ return ferien.some(f=>new Date(d)>=new Date(f.start)&&new Date(d)<=new Date(f.end));
+}
+
+/* ===== OFFLINE ===== */
+function saveState(){
+ localStorage.setItem("state",JSON.stringify({wochenplan}));
+}
+setInterval(saveState,30000);
+
+(function loadState(){
+ const s=localStorage.getItem("state");
+ if(s) wochenplan=JSON.parse(s).wochenplan;
+})();
+
+addEventListener("offline",()=>{
+ ticker=["Offline-Modus – letzte Daten"];
+});
+
+/* ===== NEWS ===== */
+let ticker=["Lade Nachrichten …"];
+let tx=canvas.width;
+async function loadNews(){
+ try{
+  const r=await fetch("https://api.rss2json.com/v1/api.json?rss_url=https://www.tagesschau.de/xml/rss2");
+  const j=await r.json();
+  ticker=j.items.slice(0,5).map(n=>n.title);
+ }catch{}
+}
+loadNews();setInterval(loadNews,300000);
+
+/* ===== RENDER ===== */
+function draw(){
+ ctx.clearRect(0,0,canvas.width,canvas.height);
+ ctx.fillStyle="#1e293b";
+ ctx.fillRect(0,0,canvas.width,canvas.height);
+
+ const colW=canvas.width*0.55/7;
+ tage.forEach((t,i)=>{
+  const x=20+i*colW,y=100;
+  ctx.fillStyle="rgba(255,255,255,.8)";
+  ctx.fillRect(x,y,colW-6,canvas.height*.55);
+  ctx.fillStyle="#000";
+  ctx.fillText(t,x+10,y+30);
+
+  personen.forEach((p,r)=>{
+   const dy=y+70+r*32;
+   if(isFerien(new Date())) {
+     ctx.fillStyle="rgba(255,215,0,.35)";
+     ctx.fillRect(x+6,dy-20,colW-18,26);
+   }
+   ctx.fillStyle="#000";
+   ctx.fillText(wochenplan[t][p],x+10,dy);
+  });
+ });
+
+ const text=ticker.join(" • ");
+ ctx.fillStyle="rgba(0,0,0,.75)";
+ ctx.fillRect(0,canvas.height-40,canvas.width,40);
+ ctx.fillStyle="#fff";
+ ctx.fillText(text,tx,canvas.height-12);
+ tx-=1;if(tx<-ctx.measureText(text).width)tx=canvas.width;
+
+ requestAnimationFrame(draw);
+}
+draw();
+</script>
+</body>
+</html>
