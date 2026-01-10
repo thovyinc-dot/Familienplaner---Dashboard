@@ -1,249 +1,186 @@
-<!DOCTYPE html>
-<html lang="de">
-<head>
-<meta charset="UTF-8">
-<title>Familienplaner Smart-TV</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<style>
-html,body{
-  margin:0;
-  padding:0;
-  background:#000;
-  overflow:hidden;
-  font-family:Arial,Helvetica,sans-serif;
-}
-canvas{display:block}
-</style>
-</head>
-<body>
+import React, { useState, useEffect, useMemo } from "react";
 
-<canvas id="dashboard"></canvas>
+const WEATHER_CITY = "Berlin";
+const WEATHER_API_KEY = "DEIN_OPENWEATHER_API_KEY";
+const VIEW_INTERVAL_MINUTES = 5;
 
-<script>
-/* =====================================================
-   GRUNDSETUP
-===================================================== */
-const canvas = document.getElementById("dashboard");
-const ctx = canvas.getContext("2d");
+const members = [
+  { name: "Eltern", className: "font-serif text-blue-900" },
+  { name: "Nea", className: "font-mono text-pink-700" },
+  { name: "Leo", className: "font-sans text-green-800" },
+  { name: "Neo", className: "font-bold text-purple-800" },
+];
 
-function resize(){
-  canvas.width = window.innerWidth;
-  canvas.height = window.innerHeight;
-}
-window.addEventListener("resize", resize);
-resize();
+const backgroundImages = [
+  "https://source.unsplash.com/1920x1080/?winter",
+  "https://source.unsplash.com/1920x1080/?spring",
+  "https://source.unsplash.com/1920x1080/?summer",
+  "https://source.unsplash.com/1920x1080/?autumn",
+];
 
-/* =====================================================
-   KONFIGURATION
-===================================================== */
-const HA_URL   = "http://homeassistant.local:8123";
-const HA_TOKEN = "DEIN_LONG_LIVED_TOKEN";
-const CALENDAR_JSON_URL = "http://DEIN_SERVER/calendar.json";
-
-/* =====================================================
-   PERSONEN & WOCHENPLAN
-===================================================== */
-const personen = ["Eltern","Nea","Leo","Neo"];
-const tage = ["Mo","Di","Mi","Do","Fr","Sa","So"];
-
-let wochenplan = {};
-tage.forEach(t=>{
-  wochenplan[t] = {};
-  personen.forEach(p=>wochenplan[t][p]="");
-});
-
-/* =====================================================
-   HINTERGRUND: TAGESZEIT + JAHRESZEIT
-===================================================== */
-function getSeason(){
-  const m=new Date().getMonth()+1;
-  if(m<=2||m===12)return"winter";
-  if(m<=5)return"spring";
-  if(m<=8)return"summer";
-  return"autumn";
-}
-function getDaytime(){
-  const h=new Date().getHours();
-  if(h<6)return"night";
-  if(h<11)return"morning";
-  if(h<18)return"day";
-  return"evening";
+function calculateEaster(year) {
+  const f = Math.floor, G = year % 19, C = f(year / 100);
+  const H = (C - f(C / 4) - f((8 * C + 13) / 25) + 19 * G + 15) % 30;
+  const I = H - f(H / 28) * (1 - f(29 / (H + 1)) * f((21 - G) / 11));
+  const J = (year + f(year / 4) + I + 2 - C + f(C / 4)) % 7;
+  const L = I - J;
+  const month = 2 + f((L + 40) / 44);
+  const day = L + 28 - 31 * f(month / 4);
+  return new Date(year, month - 1, day);
 }
 
-const bgImg = new Image();
-function updateBackground(){
-  bgImg.src=`backgrounds/${getSeason()}_${getDaytime()}.jpg`;
-}
-updateBackground();
-setInterval(updateBackground,5*60*1000);
+const germanHolidays = (year) => {
+  const holidays = [
+    { day: 1, month: 0, name: "Neujahr" },
+    { day: 1, month: 4, name: "Tag der Arbeit" },
+    { day: 3, month: 9, name: "Tag der Deutschen Einheit" },
+    { day: 25, month: 11, name: "1. Weihnachtstag" },
+    { day: 26, month: 11, name: "2. Weihnachtstag" },
+  ];
+  const easter = calculateEaster(year);
+  const addDays = (date, days) => { const d = new Date(date); d.setDate(d.getDate() + days); return d; };
+  const offsets = [ {days:-2,name:"Karfreitag"},{days:1,name:"Ostermontag"},{days:39,name:"Christi Himmelfahrt"},{days:50,name:"Pfingstmontag"} ];
+  offsets.forEach(o=>holidays.push({day:addDays(easter,o.days).getDate(),month:addDays(easter,o.days).getMonth(),name:o.name}));
+  return holidays;
+};
 
-/* =====================================================
-   FERIEN NIEDERSACHSEN (AUTO + CACHE)
-===================================================== */
-let ferien=[];
-async function loadFerien(){
-  try{
-    const r=await fetch("https://ferien-api.de/api/v1/holidays/NDS");
-    ferien=await r.json();
-    localStorage.setItem("ferien_nds",JSON.stringify(ferien));
-  }catch{
-    ferien=JSON.parse(localStorage.getItem("ferien_nds")||"[]");
-  }
-}
-loadFerien();
-
-function isFerien(d){
-  return ferien.some(f=>new Date(d)>=new Date(f.start)&&new Date(d)<=new Date(f.end));
+function getWeekNumber(d) {
+  const date = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+  const dayNum = date.getUTCDay() || 7;
+  date.setUTCDate(date.getUTCDate() + 4 - dayNum);
+  const yearStart = new Date(Date.UTC(date.getUTCFullYear(),0,1));
+  return Math.ceil((((date - yearStart) / 86400000) + 1)/7);
 }
 
-/* =====================================================
-   GOOGLE-KALENDER (JSON PROXY)
-===================================================== */
-async function loadCalendar(){
-  try{
-    const r=await fetch(CALENDAR_JSON_URL);
-    const events=await r.json();
+const monthNames = ["Januar","Februar","März","April","Mai","Juni","Juli","August","September","Oktober","November","Dezember"];
 
-    tage.forEach(t=>personen.forEach(p=>wochenplan[t][p]=""));
+export default function FamilienApp() {
+  const [date, setDate] = useState(new Date());
+  const [view, setView] = useState("calendar");
+  const [entries, setEntries] = useState(() => JSON.parse(localStorage.getItem("familienkalender-entries-v2") || "[]"));
+  const [todoList, setTodoList] = useState(() => JSON.parse(localStorage.getItem("familienkalender-todos-v2") || "{}"));
+  const [weather, setWeather] = useState("Wetter wird geladen …");
+  const [news, setNews] = useState([]);
+  const [darkMode, setDarkMode] = useState(false);
 
-    events.forEach(e=>{
-      const tag=e.weekday.slice(0,2);
-      if(!wochenplan[tag])return;
+  const year = date.getFullYear();
+  const month = date.getMonth();
+  const dayToday = date.getDate();
+  const currentWeekNumber = getWeekNumber(date);
 
-      const t=e.title.toLowerCase();
-      if(t.includes("nea"))wochenplan[tag].Nea=e.title;
-      else if(t.includes("leo"))wochenplan[tag].Leo=e.title;
-      else if(t.includes("neo"))wochenplan[tag].Neo=e.title;
-      else wochenplan[tag].Eltern+=(e.title+" ");
-    });
+  useEffect(() => { const t = setInterval(()=>setDate(new Date()),60000); return ()=>clearInterval(t); },[]);
+  useEffect(() => { localStorage.setItem("familienkalender-entries-v2", JSON.stringify(entries)); },[entries]);
+  useEffect(() => { localStorage.setItem("familienkalender-todos-v2", JSON.stringify(todoList)); },[todoList]);
+  useEffect(() => { const t = setInterval(()=>setView(v=>v==="calendar"?"slideshow":"calendar"), VIEW_INTERVAL_MINUTES*60000); return ()=>clearInterval(t); },[]);
 
-    saveState();
-  }catch{}
+  useEffect(()=>{
+    const loadWeather = async()=>{
+      if(!WEATHER_API_KEY || WEATHER_API_KEY.includes("DEIN_")) { setWeather(`☁ 17°C – ${WEATHER_CITY}`); return; }
+      try {
+        const res = await fetch(`https://api.openweathermap.org/data/2.5/weather?q=${WEATHER_CITY}&units=metric&lang=de&appid=${WEATHER_API_KEY}`);
+        const data = await res.json();
+        setWeather(`${data.weather[0].description} ${Math.round(data.main.temp)}°C – ${WEATHER_CITY}`);
+      } catch(e) { setWeather(`☁ 17°C – ${WEATHER_CITY}`); }
+    };
+    loadWeather();
+    const t = setInterval(loadWeather, 600000);
+    return () => clearInterval(t);
+  },[]);
+
+  useEffect(()=>{ setNews(["Weltpolitik: Neue Gespräche angekündigt","Wirtschaft: Märkte reagieren positiv","Technologie: Fortschritte bei KI","Klima: Internationale Maßnahmen geplant"]); },[]);
+  useEffect(()=>{ const checkTime=()=>setDarkMode(new Date().getHours()>=21 || new Date().getHours()<6); checkTime(); const t=setInterval(checkTime,60000); return ()=>clearInterval(t); },[]);
+
+  useEffect(()=>{
+    let wakeLock=null;
+    const requestWakeLock=async()=>{try{if('wakeLock' in navigator){wakeLock=await navigator.wakeLock.request('screen');}}catch{} }
+    requestWakeLock();
+    const handleVisibility = ()=>{ if(document.visibilityState==='visible') requestWakeLock(); };
+    document.addEventListener('visibilitychange', handleVisibility);
+    return ()=>{document.removeEventListener('visibilitychange', handleVisibility); wakeLock && wakeLock.release();}
+  },[]);
+
+  const addOrEditEntry=(day, member, existingEntry=null)=>{
+    const text=window.prompt(existingEntry?`Bearbeite Eintrag für ${member} am ${day}.${month+1}.${year}`:`Neuer Eintrag für ${member} am ${day}.${month+1}.${year}`, existingEntry?existingEntry.text:'');
+    if(text===null) return;
+    if(existingEntry){ setEntries(entries.map(e=>e===existingEntry?{...e,text}:e)); }
+    else{ setEntries([...entries,{year,month,day,member,text}]); }
+  };
+
+  const deleteEntry=(entry)=>{ if(window.confirm(`Eintrag löschen: ${entry.text}?`)) setEntries(entries.filter(e=>e!==entry)); };
+
+  const entriesFor=(day,member)=>useMemo(()=>entries.filter(e=>e.year===year && e.month===month && e.day===day && e.member===member),[entries,day,member,year,month]);
+
+  const addTodo=(member)=>{ const task=window.prompt(`Neues Todo für ${member}:`); if(!task) return; setTodoList({...todoList,[member]:[...(todoList[member]||[]),task]}); };
+  const deleteTodo=(member,index)=>{ const newList=[...(todoList[member]||[])]; newList.splice(index,1); setTodoList({...todoList,[member]:newList}); };
+
+  const getWeeks = useMemo(()=>{
+    const weeks=[];
+    const firstDay=new Date(year,month,1).getDay();
+    let currentWeek=new Array(firstDay).fill(null);
+    for(let day=1; day<=new Date(year,month+1,0).getDate(); day++) {
+      currentWeek.push(day);
+      if(currentWeek.length===7){ weeks.push(currentWeek); currentWeek=[]; }
+    }
+    if(currentWeek.length>0){ while(currentWeek.length<7) currentWeek.push(null); weeks.push(currentWeek); }
+    return weeks;
+  },[year,month]);
+
+  const currentWeek = useMemo(()=>getWeeks.find(week=>week.includes(dayToday)) || [],[getWeeks,dayToday]);
+
+  return (
+    <div className={`h-screen w-screen overflow-auto flex flex-col ${darkMode?'bg-black text-white':''}`} style={{backgroundImage: darkMode?'none':`url(${backgroundImages[(month+dayToday)%backgroundImages.length]})`,backgroundSize:'cover',backgroundPosition:'center'}}>
+      <div className='bg-black/70 text-white text-2xl px-6 py-2'>{weather}</div>
+
+      {view==='calendar' && (
+      <div className='flex-1 p-4 flex gap-4 flex-col lg:flex-row'>
+        <div className={`flex-[0.7] rounded-xl p-4 ${darkMode?'bg-black/70':'bg-white/80'} flex flex-col overflow-auto`}> 
+          <h2 className='text-3xl font-bold mb-2'>Aktuelle Woche (KW {currentWeekNumber})</h2>
+          <table className='w-full border-collapse text-lg'>
+            <thead><tr>{['Tag','So','Mo','Di','Mi','Do','Fr','Sa'].map(h=><th key={h} className='border p-1'>{h}</th>)}</tr></thead>
+            <tbody>
+              {members.map(m=>{
+                const memberEntries = currentWeek.map(day => day ? entriesFor(day,m.name) : []);
+                return (
+                  <tr key={m.name} style={{height:`calc(200% / ${members.length})`}}>
+                    <td className={`border p-1 font-bold ${m.className}`}>{m.name}</td>
+                    {memberEntries.map((dayEntries, idx)=><td key={idx} className='border p-1 align-top'>{dayEntries.map((e,i)=><div key={i}>{e.text}</div>)}</td>)}
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+
+        <div className={`w-1/4 rounded-xl p-2 ${darkMode?'bg-black/70':'bg-white/80'} flex flex-col`}> 
+          <h2 className='text-xl font-bold mb-1'>{monthNames[month]}</h2>
+          <table className='w-full border-collapse text-sm mb-2'>
+            <thead><tr>{['So','Mo','Di','Mi','Do','Fr','Sa'].map(d=><th key={d} className='border p-1'>{d}</th>)}</tr></thead>
+            <tbody>
+              {getWeeks.map((week,i)=>(
+                <tr key={i}>{week.map((day,idx)=><td key={idx} className={`border p-1 min-h-[15px] ${day>=currentWeek[0] && day<=currentWeek[6]?'bg-yellow-200/50':''}`}>{day||''}</td>)}</tr>
+              ))}
+            </tbody>
+          </table>
+
+          <div className='flex-1 overflow-auto mt-2'>
+            <h3 className='text-xl font-bold mb-1'>ToDo-Liste</h3>
+            {members.map(m=>(
+              <div key={m.name} className='mb-2'>
+                <h4 className={`font-bold mb-1 ${m.className}`}>{m.name}</h4>
+                <ul className='list-disc ml-6'>
+                  {(todoList[m.name]||[]).map((task,i)=>(<li key={i} className='flex justify-between items-center text-sm'><span>{task}</span><button onClick={()=>deleteTodo(m.name,i)} className='ml-2 text-red-600'>Löschen</button></li>))}
+                </ul>
+                <button onClick={()=>addTodo(m.name)} className='mt-1 bg-blue-500 text-white px-2 py-1 rounded text-sm'>+ Aufgabe</button>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>)}
+
+      {view==='slideshow' && <div className='flex-1 flex items-center justify-center text-6xl font-bold bg-black/60 text-white'>Familien-Diashow</div>}
+
+      <div className='bg-black/80 text-white text-xl overflow-hidden whitespace-nowrap'><div className='animate-marquee inline-block px-6'>{news.join(' • ')}</div></div>
+      <style>{`@keyframes marquee {0%{transform:translateX(100%);}100%{transform:translateX(-100%);}} .animate-marquee{animation:marquee 50s linear infinite;}`}</style>
+    </div>
+  );
 }
-loadCalendar();
-setInterval(loadCalendar,10*60*1000);
-
-/* =====================================================
-   OFFLINE-FALLBACK
-===================================================== */
-function saveState(){
-  localStorage.setItem("dashboard_state",JSON.stringify({wochenplan,news}));
-}
-function loadState(){
-  const s=localStorage.getItem("dashboard_state");
-  if(!s)return;
-  const d=JSON.parse(s);
-  wochenplan=d.wochenplan||wochenplan;
-  news=d.news||news;
-}
-loadState();
-
-window.addEventListener("offline",()=>{
-  news=["Offline-Modus – letzte Daten werden angezeigt"];
-});
-
-/* =====================================================
-   NACHRICHTEN-TICKER
-===================================================== */
-let news=["Lade Nachrichten …"];
-let tickerX=canvas.width;
-
-async function loadNews(){
-  try{
-    const r=await fetch(
-      "https://api.rss2json.com/v1/api.json?rss_url=https://www.tagesschau.de/xml/rss2"
-    );
-    const j=await r.json();
-    news=j.items.slice(0,5).map(n=>n.title);
-    saveState();
-  }catch{}
-}
-loadNews();
-setInterval(loadNews,5*60*1000);
-
-/* =====================================================
-   ALEXA → DIASHOW (HOME ASSISTANT)
-===================================================== */
-let slideshow=false;
-let photos=["photos/1.jpg","photos/2.jpg","photos/3.jpg"];
-let photoIndex=0;
-const slideImg=new Image();
-
-async function checkSlideshow(){
-  try{
-    const r=await fetch(`${HA_URL}/api/states/input_boolean.slideshow_modus`,{
-      headers:{Authorization:`Bearer ${HA_TOKEN}`}
-    });
-    const d=await r.json();
-    slideshow=d.state==="on";
-  }catch{}
-}
-setInterval(checkSlideshow,10000);
-
-/* Auto-Diashow alle 2 Minuten */
-setInterval(()=>{
-  slideshow=!slideshow;
-  photoIndex=(photoIndex+1)%photos.length;
-},120000);
-
-/* =====================================================
-   RENDERING
-===================================================== */
-function draw(){
-  const w=canvas.width,h=canvas.height;
-  ctx.clearRect(0,0,w,h);
-
-  if(slideshow){
-    slideImg.src=photos[photoIndex];
-    ctx.drawImage(slideImg,0,0,w,h);
-    requestAnimationFrame(draw);
-    return;
-  }
-
-  ctx.drawImage(bgImg,0,0,w,h);
-
-  /* HEADER */
-  ctx.fillStyle="rgba(0,0,0,0.65)";
-  ctx.fillRect(0,0,w,70);
-  ctx.fillStyle="#fff";
-  ctx.font="26px Arial";
-  ctx.fillText(new Date().toLocaleString("de-DE"),30,45);
-
-  /* WOCHENPLAN */
-  const colW=w*0.55/7;
-  const startY=100;
-
-  tage.forEach((t,i)=>{
-    const x=20+i*colW;
-    ctx.fillStyle="rgba(255,255,255,0.8)";
-    ctx.fillRect(x,startY,colW-6,h*0.55);
-    ctx.fillStyle="#000";
-    ctx.fillText(t,x+10,startY+30);
-
-    personen.forEach((p,r)=>{
-      const y=startY+70+r*32;
-      if(isFerien(new Date())){
-        ctx.fillStyle="rgba(255,215,0,0.35)";
-        ctx.fillRect(x+6,y-20,colW-18,26);
-      }
-      ctx.fillStyle="#000";
-      ctx.fillText(wochenplan[t][p],x+10,y);
-    });
-  });
-
-  /* NEWS-TICKER */
-  const text=news.join("  •  ");
-  ctx.fillStyle="rgba(0,0,0,0.75)";
-  ctx.fillRect(0,h-40,w,40);
-  ctx.fillStyle="#fff";
-  ctx.fillText(text,tickerX,h-12);
-  tickerX-=1;
-  if(tickerX<-ctx.measureText(text).width)tickerX=w;
-
-  requestAnimationFrame(draw);
-}
-draw();
-</script>
-
-</body>
-</html>
