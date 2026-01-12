@@ -8,20 +8,46 @@ body {
     height: 100vh;
     background-size: cover;
     background-position: center;
-    transition: background-image 1s ease-in-out;
+    color: white;
 }
 
+/* HEADER */
+.header {
+    height: 70px;
+    padding: 0 30px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(0,0,0,0.35);
+}
+
+.weather {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.weather img {
+    height: 40px;
+}
+
+.clock {
+    font-size: 1.8em;
+}
+
+/* MAIN */
 .app {
     display: grid;
-    grid-template-columns: 2.2fr 1fr;
-    height: 100%;
+    grid-template-columns: 2.3fr 1fr;
+    height: calc(100vh - 140px);
     background: rgba(0,0,0,0.25);
-    color: white;
 }
 
 /* WOCHENPLAN */
 .week {
     padding: 20px;
+    display: flex;
+    flex-direction: column;
 }
 
 .week-header, .row {
@@ -32,26 +58,24 @@ body {
 .week-header div {
     text-align: center;
     font-weight: bold;
-    padding: 8px;
 }
 
-.row {
-    margin-top: 10px;
-}
-
-.name {
-    font-weight: bold;
-    padding: 10px;
+.week-body {
+    flex: 1;
+    display: grid;
+    grid-template-rows: repeat(4, 1fr);
+    gap: 12px;
 }
 
 .row div[contenteditable] {
-    background: rgba(255,255,255,0.15);
-    margin: 3px;
-    padding: 10px;
-    border-radius: 10px;
+    background: rgba(255,255,255,0.18);
+    margin: 4px;
+    padding: 14px;
+    border-radius: 14px;
+    font-size: 1.1em;
 }
 
-/* RECHTE SEITE */
+/* SIDE */
 .side {
     padding: 20px;
     display: flex;
@@ -60,41 +84,38 @@ body {
 }
 
 .box {
-    background: rgba(255,255,255,0.18);
-    border-radius: 20px;
+    background: rgba(255,255,255,0.2);
+    border-radius: 22px;
     padding: 15px;
-}
-
-h2 {
-    margin-top: 0;
 }
 
 textarea {
     width: 100%;
     height: 120px;
-    border-radius: 12px;
+    background: rgba(0,0,0,0.4);
+    color: white;
+    border-radius: 14px;
     border: none;
     padding: 10px;
-    resize: none;
-    background: rgba(0,0,0,0.35);
-    color: white;
 }
 
-.calendar {
-    display: grid;
-    grid-template-columns: repeat(7, 1fr);
-    gap: 4px;
+/* FOOTER */
+.footer {
+    height: 70px;
+    background: rgba(0,0,0,0.4);
+    display: flex;
+    align-items: center;
+    padding: 0 30px;
 }
 
-.calendar div {
-    text-align: center;
-    padding: 6px;
-    background: rgba(0,0,0,0.3);
-    border-radius: 6px;
+.news {
+    white-space: nowrap;
+    overflow: hidden;
+    animation: ticker 30s linear infinite;
 }
 
-.ferien {
-    margin-top: 8px;
-    font-size: 0.9em;
-    opacity: 0.85;
+@keyframes ticker {
+    from { transform: translateX(100%); }
+    to { transform: translateX(-100%); }
 }
+
