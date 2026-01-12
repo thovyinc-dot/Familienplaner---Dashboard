@@ -1,43 +1,67 @@
-/* ---------- SAISON-HINTERGRUND ---------- */
-const month = new Date().getMonth();
-let bg;
+/* ===== UHR ===== */
+function updateClock() {
+    const now = new Date();
+    document.getElementById("clock").textContent =
+        now.toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" });
+}
+setInterval(updateClock, 1000);
+updateClock();
 
-if (month <= 1 || month === 11) bg = "winter";
-else if (month <= 4) bg = "spring";
-else if (month <= 7) bg = "summer";
-else bg = "autumn";
+/* ===== WETTER (OPEN-METEO, KEIN API-KEY) ===== */
+fetch("https://api.open-meteo.com/v1/forecast?latitude=52.5&longitude=9.7&current_weather=true")
+    .then(r => r.json())
+    .then(d => {
+        const w = d.current_weather;
+        document.getElementById("weatherTemp").textContent = `${Math.round(w.temperature)}°C`;
+        document.getElementById("weatherDesc").textContent = " Wetter";
+        document.getElementById("weatherIcon").src =
+            `https://openweathermap.org/img/wn/${w.weathercode < 3 ? "01" : "03"}d.png`;
 
-document.body.style.backgroundImage =
-    `url(https://source.unsplash.com/1920x1080/?${bg},nature)`;
+        setBackground(w.weathercode);
+    });
 
-/* ---------- MONAT & KALENDER ---------- */
+/* ===== HINTERGRUND ===== */
+function setBackground(code) {
+    const month = new Date().getMonth();
+    let season =
+        month <= 1 || month === 11 ? "winter" :
+        month <= 4 ? "spring" :
+        month <= 7 ? "summer" : "autumn";
+
+    let weather =
+        code < 3 ? "sunny" :
+        code < 50 ? "cloudy" :
+        "rain";
+
+    document.body.style.backgroundImage =
+        `url(https://source.unsplash.com/1920x1080/?${season},${weather},nature)`;
+}
+
+/* ===== KALENDER ===== */
 const now = new Date();
-const monthNames = [
-    "Januar","Februar","März","April","Mai","Juni",
-    "Juli","August","September","Oktober","November","Dezember"
-];
-
 document.getElementById("monthTitle").textContent =
-    `${monthNames[now.getMonth()]} ${now.getFullYear()}`;
+    now.toLocaleDateString("de-DE", { month: "long", year: "numeric" });
 
-const calendar = document.getElementById("calendar");
 const days = new Date(now.getFullYear(), now.getMonth()+1, 0).getDate();
-
+const cal = document.getElementById("calendar");
 for (let i = 1; i <= days; i++) {
     const d = document.createElement("div");
     d.textContent = i;
-    calendar.appendChild(d);
+    cal.appendChild(d);
 }
 
-/* ---------- LOCAL STORAGE ---------- */
-const shopping = document.getElementById("shopping");
-const todo = document.getElementById("todo");
+/* ===== NEWS ===== */
+fetch("https://api.allorigins.win/raw?url=https://rss.cnn.com/rss/edition_world.rss")
+    .then(r => r.text())
+    .then(t => {
+        const titles = [...t.matchAll(/<title><!\[CDATA\[(.*?)\]\]><\/title>/g)]
+            .slice(1,6).map(m => m[1]).join("   •   ");
+        document.getElementById("news").textContent = titles;
+    });
 
-shopping.value = localStorage.getItem("shopping") || "";
-todo.value = localStorage.getItem("todo") || "";
-
-shopping.oninput = () =>
-    localStorage.setItem("shopping", shopping.value);
-
-todo.oninput = () =>
-    localStorage.setItem("todo", todo.value);
+/* ===== LOCAL STORAGE ===== */
+["shopping","todo"].forEach(id => {
+    const el = document.getElementById(id);
+    el.value = localStorage.getItem(id) || "";
+    el.oninput = () => localStorage.setItem(id, el.value);
+});
