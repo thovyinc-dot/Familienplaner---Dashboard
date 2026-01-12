@@ -1,183 +1,75 @@
-// Dieses Dokument wurde bewusst ersetzt.
-// Neue Version: React-basierter Smart-TV-Familienplaner
-// - Optimiert für 1080p & 4K TVs
-// - Echte Ferien Niedersachsen 2026 (statisch, fortlaufend)
-// - Geeignet für GitHub (Create-React-App oder Vite)
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <title>Familienplaner</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="app">
 
-/* ============================
-   DATEI: src/App.jsx
-   ============================ */
-
-import { useEffect, useState } from "react";
-import "./App.css";
-
-const FAMILY = ["Eltern", "Nea", "Leo", "Neo"];
-const DAYS = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"];
-
-// Niedersachsen – Schulferien 2026 (offiziell, kompakt)
-const HOLIDAYS_2026 = {
-  1: [1, 2, 3, 4],              // Winterferien (Januar)
-  3: [23, 24, 25, 26, 27],      // Osterferien (März)
-  4: [30],                      // Brückentag
-  7: [2, 3, 4, 5, 6, 7, 8, 9],  // Sommerferien (Beginn)
-  8: [1, 2, 3, 4, 5, 6, 7],     // Sommerferien (Ende)
-  10: [19, 20, 21, 22, 23],     // Herbstferien
-  12: [23, 24, 25, 26, 27, 28, 29, 30, 31] // Weihnachtsferien
-};
-
-const SEASONS = [
-  "/background/spring.jpg",
-  "/background/summer_day.jpg",
-  "/background/autumn.jpg",
-  "/background/winter_morning.jpg"
-];
-
-export default function App() {
-  const [season, setSeason] = useState(0);
-  const today = new Date();
-  const month = today.getMonth() + 1;
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setSeason((s) => (s + 1) % SEASONS.length);
-    }, 20000);
-    return () => clearInterval(interval);
-  }, []);
-
-  return (
-    <div className="app" style={{ backgroundImage: `url(${SEASONS[season]})` }}>
-      <div className="panel week">
-        <div></div>
-        {DAYS.map((d) => (
-          <div key={d} className="header">{d}</div>
-        ))}
-
-        {FAMILY.map((name) => (
-          <>
-            <div className="name" key={name}>{name}</div>
-            {DAYS.map((_, i) => (
-              <div key={name + i} className="cell"></div>
-            ))}
-          </>
-        ))}
-      </div>
-
-      <div className="side">
-        <div className="panel">
-          <h3>Monat {month} / 2026 – Niedersachsen</h3>
-          <div className="calendar">
-            {[...Array(31)].map((_, i) => {
-              const day = i + 1;
-              const isHoliday = HOLIDAYS_2026[month]?.includes(day);
-              return (
-                <div
-                  key={day}
-                  className={isHoliday ? "holiday" : ""}
-                >
-                  {day}
-                </div>
-              );
-            })}
-          </div>
+    <!-- LINKE SEITE – WOCHENPLAN -->
+    <section class="week">
+        <div class="week-header">
+            <div></div>
+            <div>Mo</div><div>Di</div><div>Mi</div>
+            <div>Do</div><div>Fr</div><div>Sa</div><div>So</div>
         </div>
 
-        <div className="panel">
-          <h3>Einkaufsliste</h3>
-          <ul>
-            <li>Milch</li>
-            <li>Brot</li>
-            <li>Gemüse</li>
-          </ul>
+        <div class="row">
+            <div class="name">Eltern</div>
+            <div contenteditable></div><div contenteditable></div><div contenteditable></div>
+            <div contenteditable></div><div contenteditable></div><div contenteditable></div><div contenteditable></div>
         </div>
 
-        <div className="panel">
-          <h3>To-Do (alle)</h3>
-          <ul>
-            <li>Müll rausbringen</li>
-            <li>Wäsche</li>
-            <li>Wochenplan pflegen</li>
-          </ul>
+        <div class="row">
+            <div class="name">Nea</div>
+            <div contenteditable></div><div contenteditable></div><div contenteditable></div>
+            <div contenteditable></div><div contenteditable></div><div contenteditable></div><div contenteditable></div>
         </div>
-      </div>
-    </div>
-  );
-}
 
-/* ============================
-   DATEI: src/App.css
-   ============================ */
+        <div class="row">
+            <div class="name">Leo</div>
+            <div contenteditable></div><div contenteditable></div><div contenteditable></div>
+            <div contenteditable></div><div contenteditable></div><div contenteditable></div><div contenteditable></div>
+        </div>
 
-:root {
-  --glass: rgba(255,255,255,0.18);
-  --border: rgba(255,255,255,0.35);
-}
+        <div class="row">
+            <div class="name">Neo</div>
+            <div contenteditable></div><div contenteditable></div><div contenteditable></div>
+            <div contenteditable></div><div contenteditable></div><div contenteditable></div><div contenteditable></div>
+        </div>
+    </section>
 
-body, html, #root {
-  margin: 0;
-  height: 100%;
-}
+    <!-- RECHTE SEITE -->
+    <aside class="side">
 
-.app {
-  display: grid;
-  grid-template-columns: 3fr 1.4fr;
-  gap: 2vw;
-  padding: 2vw;
-  height: 100vh;
-  background-size: cover;
-  background-position: center;
-  color: white;
-}
+        <!-- MONATSÜBERSICHT -->
+        <div class="box">
+            <h2 id="monthTitle"></h2>
+            <div class="calendar" id="calendar"></div>
+            <div class="ferien">Ferien Niedersachsen</div>
+        </div>
 
-.panel {
-  background: var(--glass);
-  border: 1px solid var(--border);
-  border-radius: 24px;
-  padding: 1.5vw;
-}
+        <!-- EINKAUFSLISTE -->
+        <div class="box">
+            <h2>Einkaufsliste</h2>
+            <textarea id="shopping"></textarea>
+        </div>
 
-.week {
-  display: grid;
-  grid-template-columns: 10vw repeat(7, 1fr);
-  gap: 0.6vw;
-}
+        <!-- TODO -->
+        <div class="box">
+            <h2>To-Do</h2>
+            <textarea id="todo"></textarea>
+        </div>
 
-.header, .name, .cell {
-  background: rgba(0,0,0,0.3);
-  border-radius: 12px;
-  padding: 0.8vw;
-}
+    </aside>
+</div>
 
-.name {
-  font-weight: 600;
-}
-
-.side {
-  display: grid;
-  grid-template-rows: auto 1fr 1fr;
-  gap: 1.5vw;
-}
-
-.calendar {
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  gap: 0.4vw;
-}
-
-.calendar div {
-  background: rgba(0,0,0,0.3);
-  border-radius: 8px;
-  padding: 0.4vw;
-  text-align: center;
-}
-
-.holiday {
-  background: rgba(220,60,60,0.75) !important;
-}
-
-/* 4K TV Optimierung */
-@media (min-width: 3000px) {
-  .app { font-size: 1.4rem; }
-}
+<script src="app.js"></script>
+</body>
+</html>
 
 
 
