@@ -1,89 +1,45 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-    <meta charset="UTF-8">
-    <title>Familienplaner Smart TV</title>
-    <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8">
+  <title>Familienplaner Smart TV</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<div id="background"></div>
 
-<header>
-    <div class="weather">
-        <span id="weather-icon">☀️</span>
-        <span id="weather-text">18°C · Heiter</span>
-    </div>
-    <div class="clock" id="clock"></div>
+<header class="header">
+  <div id="weather">☀️ 18°C</div>
+  <div id="clock"></div>
 </header>
 
-<main>
-    <section class="left">
-        <h2>Wochenübersicht</h2>
-        <table class="week">
-            <thead>
-                <tr>
-                    <th>Person</th>
-                    <th>Mo</th><th>Di</th><th>Mi</th>
-                    <th>Do</th><th>Fr</th><th>Sa</th><th>So</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr class="nea"><td>Nea</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
-                <tr class="leo"><td>Leo</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
-                <tr class="neo"><td>Neo</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
-                <tr class="eltern"><td>Eltern</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
-            </tbody>
-        </table>
-    </section>
+<main class="container">
+  <section class="left">
+    <h2>Wochenübersicht</h2>
+    <div class="week-grid">
+      <div class="days">
+        <span>Mo</span><span>Di</span><span>Mi</span>
+        <span>Do</span><span>Fr</span><span>Sa</span><span>So</span>
+      </div>
 
-    <section class="right">
-        <div class="panel">
-            <h3>Monatsübersicht · Niedersachsen</h3>
-            <div id="calendar"></div>
-            <p class="ferien">Aktuelle Schulferien hervorgehoben</p>
-        </div>
+      <div class="row parents">Eltern</div>
+      <div class="row nea">Nea</div>
+      <div class="row leo">Leo</div>
+      <div class="row neo">Neo</div>
+    </div>
+  </section>
 
-        <div class="panel">
-            <h3>Einkaufsliste</h3>
-            <ul class="list">
-                <li><input type="checkbox"> Milch</li>
-                <li><input type="checkbox"> Brot</li>
-                <li><input type="checkbox"> Butter</li>
-                <li><input type="checkbox"> Käse</li>
-                <li><input type="checkbox"> Eier</li>
-                <li><input type="checkbox"> Äpfel</li>
-                <li><input type="checkbox"> Bananen</li>
-                <li><input type="checkbox"> Tomaten</li>
-                <li><input type="checkbox"> Nudeln</li>
-                <li><input type="checkbox"> Reis</li>
-                <li><input type="checkbox"> Joghurt</li>
-                <li><input type="checkbox"> Saft</li>
-                <li><input type="checkbox"> Kaffee</li>
-                <li><input type="checkbox"> Tee</li>
-                <li><input type="checkbox"> Müsli</li>
-                <li><input type="checkbox"> Öl</li>
-            </ul>
-        </div>
+  <aside class="right">
+    <div class="panel">
+      <h3>Monatsübersicht</h3>
+      <div id="calendar"></div>
+      <small>Ferien Niedersachsen</small>
+    </div>
 
-        <div class="panel">
-            <h3>To-Do-Liste</h3>
-            <ul class="list">
-                <li><input type="checkbox"> Müll rausbringen</li>
-                <li><input type="checkbox"> Hausaufgaben prüfen</li>
-                <li><input type="checkbox"> Einkauf erledigen</li>
-                <li><input type="checkbox"> Arzttermin planen</li>
-            </ul>
-        </div>
-    </section>
-</main>
+    <div class="panel">
+      <h3>Einkaufsliste</h3>
+      <ul id="shopping">
+        <li>Br
 
-<footer>
-    <marquee id="news">Weltweite Nachrichten werden geladen …</marquee>
-</footer>
-
-<script src="app.js"></script>
-</body>
-</html>
 
 
 
