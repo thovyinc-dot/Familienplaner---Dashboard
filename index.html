@@ -2,14 +2,24 @@
 <html lang="de">
 <head>
     <meta charset="UTF-8">
-    <title>Familienplaner</title>
+    <title>Familienplaner TV</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<div class="app">
 
-    <!-- LINKE SEITE – WOCHENPLAN -->
+<header class="header">
+    <div class="weather">
+        <img id="weatherIcon">
+        <span id="weatherTemp"></span>
+        <span id="weatherDesc"></span>
+    </div>
+    <div class="clock" id="clock"></div>
+</header>
+
+<main class="app">
+
+    <!-- WOCHENPLAN -->
     <section class="week">
         <div class="week-header">
             <div></div>
@@ -17,59 +27,43 @@
             <div>Do</div><div>Fr</div><div>Sa</div><div>So</div>
         </div>
 
-        <div class="row">
-            <div class="name">Eltern</div>
-            <div contenteditable></div><div contenteditable></div><div contenteditable></div>
-            <div contenteditable></div><div contenteditable></div><div contenteditable></div><div contenteditable></div>
-        </div>
-
-        <div class="row">
-            <div class="name">Nea</div>
-            <div contenteditable></div><div contenteditable></div><div contenteditable></div>
-            <div contenteditable></div><div contenteditable></div><div contenteditable></div><div contenteditable></div>
-        </div>
-
-        <div class="row">
-            <div class="name">Leo</div>
-            <div contenteditable></div><div contenteditable></div><div contenteditable></div>
-            <div contenteditable></div><div contenteditable></div><div contenteditable></div><div contenteditable></div>
-        </div>
-
-        <div class="row">
-            <div class="name">Neo</div>
-            <div contenteditable></div><div contenteditable></div><div contenteditable></div>
-            <div contenteditable></div><div contenteditable></div><div contenteditable></div><div contenteditable></div>
+        <div class="week-body">
+            <div class="row"><div class="name">Eltern</div><div contenteditable></div><div contenteditable></div><div contenteditable></div><div contenteditable></div><div contenteditable></div><div contenteditable></div><div contenteditable></div></div>
+            <div class="row"><div class="name">Nea</div><div contenteditable></div><div contenteditable></div><div contenteditable></div><div contenteditable></div><div contenteditable></div><div contenteditable></div><div contenteditable></div></div>
+            <div class="row"><div class="name">Leo</div><div contenteditable></div><div contenteditable></div><div contenteditable></div><div contenteditable></div><div contenteditable></div><div contenteditable></div><div contenteditable></div></div>
+            <div class="row"><div class="name">Neo</div><div contenteditable></div><div contenteditable></div><div contenteditable></div><div contenteditable></div><div contenteditable></div><div contenteditable></div><div contenteditable></div></div>
         </div>
     </section>
 
-    <!-- RECHTE SEITE -->
+    <!-- SEITENBEREICH -->
     <aside class="side">
-
-        <!-- MONATSÜBERSICHT -->
         <div class="box">
             <h2 id="monthTitle"></h2>
             <div class="calendar" id="calendar"></div>
             <div class="ferien">Ferien Niedersachsen</div>
         </div>
 
-        <!-- EINKAUFSLISTE -->
         <div class="box">
             <h2>Einkaufsliste</h2>
             <textarea id="shopping"></textarea>
         </div>
 
-        <!-- TODO -->
         <div class="box">
             <h2>To-Do</h2>
             <textarea id="todo"></textarea>
         </div>
-
     </aside>
-</div>
+
+</main>
+
+<footer class="footer">
+    <div class="news" id="news"></div>
+</footer>
 
 <script src="app.js"></script>
 </body>
 </html>
+
 
 
 
