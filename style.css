@@ -1,86 +1,72 @@
-* {
-    box-sizing: border-box;
-    font-family: "Segoe UI", Arial, sans-serif;
-    color: #fff;
-}
+* { box-sizing: border-box; font-family: Arial, sans-serif; }
 
 body {
-    margin: 0;
-    background: transparent;
-}
-
-#background {
-    position: fixed;
-    inset: 0;
-    background-size: cover;
-    background-position: center;
-    filter: brightness(0.7);
-    z-index: -1;
+  margin: 0;
+  height: 100vh;
+  background-size: cover;
+  background-position: center;
+  color: #fff;
 }
 
 header, footer {
-    display: flex;
-    justify-content: space-between;
-    padding: 12px 24px;
-    background: rgba(0,0,0,0.5);
+  background: rgba(0,0,0,0.4);
+  padding: 10px 20px;
+  display: flex;
+  justify-content: space-between;
 }
 
-.clock {
-    font-size: 28px;
-    font-weight: bold;
-}
-
-main {
-    display: flex;
-    height: calc(100vh - 120px);
-    padding: 20px;
-    gap: 20px;
+.container {
+  display: flex;
+  height: calc(100vh - 100px);
 }
 
 .left {
-    flex: 2;
-    background: rgba(0,0,0,0.45);
-    padding: 20px;
-    border-radius: 12px;
+  width: 70%;
+  padding: 20px;
 }
 
 .right {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
+  width: 30%;
+  padding: 20px;
 }
 
 .panel {
-    background: rgba(0,0,0,0.45);
-    padding: 14px;
-    border-radius: 12px;
+  background: rgba(255,255,255,0.15);
+  backdrop-filter: blur(8px);
+  border-radius: 12px;
+  padding: 10px;
+  margin-bottom: 15px;
 }
 
-.week {
-    width: 100%;
-    border-collapse: collapse;
+.week-grid .days span {
+  width: 13%;
+  display: inline-block;
+  text-align: center;
 }
 
-.week th, .week td {
-    border: 1px solid rgba(255,255,255,0.3);
-    padding: 10px;
-    text-align: center;
+.row {
+  margin-top: 10px;
+  height: 50px;
+  border-radius: 8px;
 }
 
-.nea { background: rgba(255,99,132,0.35); }
-.leo { background: rgba(54,162,235,0.35); }
-.neo { background: rgba(75,192,192,0.35); }
-.eltern { background: rgba(255,206,86,0.35); }
+.parents { background: rgba(0,120,255,0.6); }
+.nea { background: rgba(0,200,120,0.6); }
+.leo { background: rgba(255,150,0,0.6); }
+.neo { background: rgba(180,80,255,0.6); }
 
-.list {
-    list-style: none;
-    padding: 0;
-    margin: 0;
+.footer {
+  overflow: hidden;
 }
 
-.list li {
-    margin-bottom: 6px;
+#news-ticker {
+  white-space: nowrap;
+  animation: scroll 30s linear infinite;
+}
+
+@keyframes scroll {
+  from { transform: translateX(100%); }
+  to { transform: translateX(-100%); }
 }
 
 footer {
