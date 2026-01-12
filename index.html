@@ -2,67 +2,89 @@
 <html lang="de">
 <head>
     <meta charset="UTF-8">
-    <title>Familienplaner TV</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Familienplaner Smart TV</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
+<div id="background"></div>
 
-<header class="header">
+<header>
     <div class="weather">
-        <img id="weatherIcon">
-        <span id="weatherTemp"></span>
-        <span id="weatherDesc"></span>
+        <span id="weather-icon">☀️</span>
+        <span id="weather-text">18°C · Heiter</span>
     </div>
     <div class="clock" id="clock"></div>
 </header>
 
-<main class="app">
-
-    <!-- WOCHENPLAN -->
-    <section class="week">
-        <div class="week-header">
-            <div></div>
-            <div>Mo</div><div>Di</div><div>Mi</div>
-            <div>Do</div><div>Fr</div><div>Sa</div><div>So</div>
-        </div>
-
-        <div class="week-body">
-            <div class="row"><div class="name">Eltern</div><div contenteditable></div><div contenteditable></div><div contenteditable></div><div contenteditable></div><div contenteditable></div><div contenteditable></div><div contenteditable></div></div>
-            <div class="row"><div class="name">Nea</div><div contenteditable></div><div contenteditable></div><div contenteditable></div><div contenteditable></div><div contenteditable></div><div contenteditable></div><div contenteditable></div></div>
-            <div class="row"><div class="name">Leo</div><div contenteditable></div><div contenteditable></div><div contenteditable></div><div contenteditable></div><div contenteditable></div><div contenteditable></div><div contenteditable></div></div>
-            <div class="row"><div class="name">Neo</div><div contenteditable></div><div contenteditable></div><div contenteditable></div><div contenteditable></div><div contenteditable></div><div contenteditable></div><div contenteditable></div></div>
-        </div>
+<main>
+    <section class="left">
+        <h2>Wochenübersicht</h2>
+        <table class="week">
+            <thead>
+                <tr>
+                    <th>Person</th>
+                    <th>Mo</th><th>Di</th><th>Mi</th>
+                    <th>Do</th><th>Fr</th><th>Sa</th><th>So</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr class="nea"><td>Nea</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+                <tr class="leo"><td>Leo</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+                <tr class="neo"><td>Neo</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+                <tr class="eltern"><td>Eltern</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+            </tbody>
+        </table>
     </section>
 
-    <!-- SEITENBEREICH -->
-    <aside class="side">
-        <div class="box">
-            <h2 id="monthTitle"></h2>
-            <div class="calendar" id="calendar"></div>
-            <div class="ferien">Ferien Niedersachsen</div>
+    <section class="right">
+        <div class="panel">
+            <h3>Monatsübersicht · Niedersachsen</h3>
+            <div id="calendar"></div>
+            <p class="ferien">Aktuelle Schulferien hervorgehoben</p>
         </div>
 
-        <div class="box">
-            <h2>Einkaufsliste</h2>
-            <textarea id="shopping"></textarea>
+        <div class="panel">
+            <h3>Einkaufsliste</h3>
+            <ul class="list">
+                <li><input type="checkbox"> Milch</li>
+                <li><input type="checkbox"> Brot</li>
+                <li><input type="checkbox"> Butter</li>
+                <li><input type="checkbox"> Käse</li>
+                <li><input type="checkbox"> Eier</li>
+                <li><input type="checkbox"> Äpfel</li>
+                <li><input type="checkbox"> Bananen</li>
+                <li><input type="checkbox"> Tomaten</li>
+                <li><input type="checkbox"> Nudeln</li>
+                <li><input type="checkbox"> Reis</li>
+                <li><input type="checkbox"> Joghurt</li>
+                <li><input type="checkbox"> Saft</li>
+                <li><input type="checkbox"> Kaffee</li>
+                <li><input type="checkbox"> Tee</li>
+                <li><input type="checkbox"> Müsli</li>
+                <li><input type="checkbox"> Öl</li>
+            </ul>
         </div>
 
-        <div class="box">
-            <h2>To-Do</h2>
-            <textarea id="todo"></textarea>
+        <div class="panel">
+            <h3>To-Do-Liste</h3>
+            <ul class="list">
+                <li><input type="checkbox"> Müll rausbringen</li>
+                <li><input type="checkbox"> Hausaufgaben prüfen</li>
+                <li><input type="checkbox"> Einkauf erledigen</li>
+                <li><input type="checkbox"> Arzttermin planen</li>
+            </ul>
         </div>
-    </aside>
-
+    </section>
 </main>
 
-<footer class="footer">
-    <div class="news" id="news"></div>
+<footer>
+    <marquee id="news">Weltweite Nachrichten werden geladen …</marquee>
 </footer>
 
 <script src="app.js"></script>
 </body>
 </html>
+
 
 
 
