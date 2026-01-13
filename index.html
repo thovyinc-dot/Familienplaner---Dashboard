@@ -1,47 +1,172 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-  <meta charset="UTF-8">
-  <title>Familienplaner Smart TV</title>
-  <link rel="stylesheet" href="style.css">
+<meta charset="UTF-8">
+<title>Familien Dashboard</title>
+
+<style>
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: #0f172a;
+    color: #ffffff;
+}
+
+.dashboard {
+    display: grid;
+    grid-template-rows: 80px 1fr 50px;
+    height: 100vh;
+}
+
+/* ───── Kopfzeile ───── */
+header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 30px;
+    background: #1e293b;
+    font-size: 20px;
+}
+
+/* ───── Hauptbereich ───── */
+main {
+    display: grid;
+    grid-template-columns: 65% 35%;
+}
+
+/* Familienkalender */
+.family-calendar {
+    padding: 20px;
+}
+
+.family-calendar table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 18px;
+}
+
+.family-calendar th,
+.family-calendar td {
+    border: 1px solid #334155;
+    padding: 12px;
+    vertical-align: top;
+}
+
+.neA { background: rgba(59,130,246,0.25); }
+.leo { background: rgba(34,197,94,0.25); }
+.neo { background: rgba(234,179,8,0.25); }
+.eltern { background: rgba(168,85,247,0.25); }
+
+/* Rechte Spalte */
+.side-panel {
+    padding: 20px;
+    border-left: 2px solid #334155;
+}
+
+.month-calendar {
+    margin-bottom: 20px;
+}
+
+.todo-list li {
+    margin-bottom: 10px;
+}
+
+/* ───── Fußzeile ───── */
+footer {
+    background: #020617;
+    overflow: hidden;
+    white-space: nowrap;
+}
+
+.news-ticker {
+    display: inline-block;
+    padding-left: 100%;
+    animation: ticker 40s linear infinite;
+}
+
+@keyframes ticker {
+    from { transform: translateX(0); }
+    to { transform: translateX(-100%); }
+}
+</style>
 </head>
+
 <body>
 
-<header class="header">
-  <div id="weather">☀️ 18°C</div>
-  <div id="clock"></div>
+<div class="dashboard">
+
+<header>
+    <div id="weather">🌤️ Cremlingen: 18°C</div>
+    <div id="datetime"></div>
 </header>
 
-<main class="container">
-  <section class="left">
-    <h2>Wochenübersicht</h2>
-    <div class="week-grid">
-      <div class="days">
-        <span>Mo</span><span>Di</span><span>Mi</span>
-        <span>Do</span><span>Fr</span><span>Sa</span><span>So</span>
-      </div>
+<main>
 
-      <div class="row parents">Eltern</div>
-      <div class="row nea">Nea</div>
-      <div class="row leo">Leo</div>
-      <div class="row neo">Neo</div>
+<section class="family-calendar">
+<table>
+    <tr>
+        <th>Person</th>
+        <th>Mo</th><th>Di</th><th>Mi</th>
+        <th>Do</th><th>Fr</th><th>Sa</th><th>So</th>
+    </tr>
+    <tr class="eltern">
+        <td>Eltern</td>
+        <td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+    </tr>
+    <tr class="neA">
+        <td>Nea</td>
+        <td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+    </tr>
+    <tr class="leo">
+        <td>Leo</td>
+        <td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+    </tr>
+    <tr class="neo">
+        <td>Neo</td>
+        <td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+    </tr>
+</table>
+</section>
+
+<aside class="side-panel">
+    <div class="month-calendar">
+        <h3>Monatskalender</h3>
+        <p>Ferientage werden farblich markiert</p>
     </div>
-  </section>
 
-  <aside class="right">
-    <div class="panel">
-      <h3>Monatsübersicht</h3>
-      <div id="calendar"></div>
-      <small>Ferien Niedersachsen</small>
+    <div>
+        <h3>To-Do Liste</h3>
+        <ul class="todo-list">
+            <li>📝 Einkaufen</li>
+            <li>📝 Elternabend</li>
+            <li>📝 Sporttasche packen</li>
+        </ul>
     </div>
+</aside>
 
-    <div class="panel">
-      <h3>Einkaufsliste</h3>
-      <ul id="shopping">
-        <li>Br
+</main>
 
+<footer>
+    <div class="news-ticker">
+        Aktuelle Nachrichten laufen hier als Banner – z. B. Tagesschau, NDR, Spiegel Online
+    </div>
+</footer>
 
+</div>
 
+<script>
+function updateTime() {
+    const now = new Date();
+    document.getElementById("datetime").innerText =
+        now.toLocaleDateString("de-DE") + " " +
+        now.toLocaleTimeString("de-DE", { hour: '2-digit', minute: '2-digit' });
+}
 
+setInterval(updateTime, 1000);
+updateTime();
+</script>
+
+</body>
+</html>
 
 
